@@ -5,7 +5,7 @@ import { suspend } from 'suspend-react'
 import {OrbitControls, Text } from '@react-three/drei'
 import { useInstrumentsStore } from './store'
 
-
+import { Analytics } from "@vercel/analytics/react"
 
 interface TrackProps {
   url?: string
@@ -52,6 +52,7 @@ export default function App(_props: any) {
   const [snareText, setSnareText] = useState(false);
   return (
     <>
+    <Analytics/>
     <Canvas shadows dpr={[1, 2]} camera={{ position: [-0.5, 2, 1.5], fov: 25 }}>
       <spotLight position={[0, 6, -4]} angle={0.06} penumbra={1} castShadow shadow-mapSize={[2048, 2048]} />
       <Suspense fallback={null}>
