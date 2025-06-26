@@ -3,20 +3,41 @@
 let lastVibrateTime = 0;
 const VIBRATE_THROTTLE_MS = 100;
 
-export function Haptic(intensity: number, sharpness:number, min?: number) {
+export function Haptic(
+  intense:number, 
+  sharp:number,
+  rangeMin?:number,
+  rangeMax?:number
+){
+if (intense && sharp ) {
 
-    if (min !== undefined && intensity < min) {
-    return; // Below threshold, skip
-  }
-  // Normalize 0–1, then vibrate or log
-  const normalized = Math.min(1, intensity);
-//   console.log("Haptic intensity:", normalized);
-// console.log("Haptic intensity:", sharpness);
-  // navigator.vibrate?.(normalized * 100); // example
+    let intensity;
 
-  if ((navigator as any).haptic) {
+    if(rangeMin !== undefined && rangeMax !== undefined)
+    {
+      if(intense < 10) return;
+
+      const mapForce = (val: number) => {
+        if (val >= rangeMax) return 1.0;
+        const minVal = rangeMin;
+        const maxVal = rangeMax;
+        const minMapped = 0.2;
+        const maxMapped = 1.0;
+        const scaled = (val - minVal) / (maxVal - minVal); 
+        return minMapped + scaled * (maxMapped - minMapped);
+      };
+
+      intensity = mapForce(intense);
+    }
+    else
+    {
+      intensity = intense;
+    }
+   
+
+    if ((navigator as any).haptic) {
       (navigator as any).haptic([
-        { intensity:normalized, sharpness:sharpness }
+        { intensity:intensity, sharpness:sharp }
       ]);
     } 
     else 
@@ -29,4 +50,5 @@ export function Haptic(intensity: number, sharpness:number, min?: number) {
       lastVibrateTime = now;
       navigator.vibrate(5);
     }
+  }
 }

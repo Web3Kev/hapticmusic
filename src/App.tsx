@@ -6,6 +6,8 @@ import {OrbitControls, Text } from '@react-three/drei'
 import { useInstrumentsStore } from './store'
 
 import { Analytics } from "@vercel/analytics/react"
+import { SynthPad } from './SynthPad'
+import { Haptic } from './haptic'
 
 interface TrackProps {
   url?: string
@@ -37,9 +39,9 @@ interface AudioData {
   update: () => number
 }
 
-let lastVibrateTime = 0;
-const VIBRATE_THROTTLE_MS = 100; // Allow 1 vibration per 100ms
 
+const landscapeView:THREE.Vector3 = new THREE.Vector3(.7,-1,0)
+const portraitView:THREE.Vector3 = new THREE.Vector3(0,-0.75,0)
 export default function App(_props: any) {
 
 
@@ -50,6 +52,26 @@ export default function App(_props: any) {
   const toggleSnare = useInstrumentsStore((s: { toggleSnare: any }) => s.toggleSnare)
   const [drumText, setDrumText] = useState(false);
   const [snareText, setSnareText] = useState(false);
+  const [controlTarget, setControlTarget] = useState(landscapeView);
+
+
+  useEffect(() => {
+  const updateTarget = () => {
+    const isPortrait = window.innerHeight > window.innerWidth
+   if(isPortrait){setControlTarget(portraitView)}else{setControlTarget(landscapeView)}
+  }
+
+  window.addEventListener('resize', updateTarget)
+  window.addEventListener('orientationchange', updateTarget)
+
+  updateTarget() // initial set
+
+  return () => {
+    window.removeEventListener('resize', updateTarget)
+    window.removeEventListener('orientationchange', updateTarget)
+  }
+}, [])
+
   return (
     <>
     <Analytics/>
@@ -74,59 +96,25 @@ export default function App(_props: any) {
       </mesh>
       <OrbitControls
       minAzimuthAngle={-Math.PI / 4}
-      maxAzimuthAngle={Math.PI / 4}
+      maxAzimuthAngle={-Math.PI / 8}
       minPolarAngle={Math.PI / 6}
-      maxPolarAngle={Math.PI /2.2}
-      minDistance={1}
+      maxPolarAngle={Math.PI /6}
+      minDistance={4}
       maxDistance={5}
       enablePan={false}
-      target={new THREE.Vector3(0,-0.2,0)}
+      target={controlTarget}
       />
     </Canvas>
     <div className="bottom-text">
   Tap or click on a text to MUTE / unMUTE
 </div>
 <div className="vignette"></div>
+<SynthPad/>
     </>
   )
 }
 
-function Haptic(
-  intense:number, 
-  sharp:number
-){
-if (intense && sharp && intense > 10) {
 
-    
-    const mapForce = (val: number) => {
-      if (val >= 150) return 1.0;
-      const minVal = 10;
-      const maxVal = 150;
-      const minMapped = 0.2;
-      const maxMapped = 1.0;
-      const scaled = (val - minVal) / (maxVal - minVal); 
-      return minMapped + scaled * (maxMapped - minMapped);
-    };
-
-    const intensity = mapForce(intense);
-
-    if ((navigator as any).haptic) {
-      (navigator as any).haptic([
-        { intensity:intensity, sharpness:sharp }
-      ]);
-    } 
-    else 
-    if ("vibrate" in navigator) {
-
-      const now = Date.now();
-      if (now - lastVibrateTime < VIBRATE_THROTTLE_MS) {
-        return; // Too soon, skip
-      }
-      lastVibrateTime = now;
-      navigator.vibrate(5);
-    }
-  }
-}
 
 
 function Track({
@@ -177,7 +165,7 @@ function Track({
     }
 
 
-     if(haptic && haptic!=0){Haptic(avg/2, haptic)}
+     if(haptic && haptic!=0){Haptic(avg/2, haptic, 10, 150)}
 
     if (ref.current.material instanceof THREE.MeshBasicMaterial) {
       ref.current.material.color.setHSL(avg / 200, 0.8,0.5)
@@ -216,7 +204,7 @@ const prevAvgRef = useRef(0)
 
 
     if (prev <40 && avg >= 40) {
-      if (haptic && haptic!=0) Haptic(avg*3,0.3)
+      if (haptic && haptic!=0) Haptic(avg*3,0.3, 10,150)
     }
 
     prevAvgRef.current = avg
