@@ -15,7 +15,7 @@ if (intense && sharp ) {
 
     if(rangeMin !== undefined && rangeMax !== undefined)
     {
-      if(intense < 10) return;
+      if(intense < rangeMin) return;
 
       const mapForce = (val: number) => {
         if (val >= rangeMax) return 1.0;
